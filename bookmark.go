@@ -3,12 +3,22 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 
 	"github.com/bubble501/bookmark/config"
 	"github.com/bubble501/bookmark/handlers"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+func restricted(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	name := claims["name"].(string)
+	return c.String(http.StatusOK, "Welcome "+name+"!")
+}
 
 func main() {
 	dbpath := config.Singleton.GetStringValue("dbPath", "storage.db")
@@ -21,8 +31,11 @@ func main() {
 	e.File("/", "public/index.html")
 	e.GET("/bookmarks", handlers.GetBookmarks(db))
 	e.PUT("/bookmark", handlers.PutBookmark(db))
+	e.POST("/login", handlers.Login(db))
 	e.DELETE("/bookmark/:id", handlers.DeleteBookmark(db))
-
+	r := e.Group("/restricted")
+	r.Use(middleware.JWT([]byte("secret")))
+	r.GET("", restricted)
 	e.Start(":8000")
 }
 
