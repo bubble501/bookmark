@@ -1,0 +1,107 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+        <title>网络书签</title>
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+        <!-- Font Awesome -->
+        <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+        <!-- JQuery -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+        <!-- Vue.js -->
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/0.7.0/vue-resource.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h2>{{error}} </h2>
+                    <h2>我的书签</h2>
+                    <ul class="list-group">
+                        <li class="list-group-item" v-for="bookmark in bookmarks">
+                            <a href="{{ bookmark.url }}">{{ bookmark.title }}</a>
+                            <span class="pull-right">
+                                <button class="btn btn-xs btn-danger" v-on:click="deleteBookmark($index)">
+                                    <i class="fa fa-trash-o" aria-hidden="true"></i>
+                                </button>
+                            </span>
+                        </li>
+                    </ul>
+                    <div class="input-group">
+                        <input type="text"
+                            class="form-control"
+                            placeholder="New bookmark"
+                            v-on:keyup.enter="createBookmark"
+                            v-model="newBookmark.url">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" type="button" v-on:click="createBookmark">创建</button>
+                        </span>
+                    </div><!-- /input-group -->
+                </div>
+            </div>
+        </div>
+        <script>
+            new Vue({
+                el: 'body',
+
+                data: {
+                    bookmarks: [],
+                    newBookmark: {},
+                    error: ""
+                },
+
+                // This is run whenever the page is loaded to make sure we have a current bookmark list
+                created: function() {
+                    // Use the vue-resource $http client to fetch data from the /tasks route
+                    this.$http.get('/bookmarks').then(function(response) {
+                        this.bookmarks = response.data.items ? response.data.items : []
+                    })
+                },
+
+                methods: {
+                    createBookmark: function() {
+                        if (!$.trim(this.newBookmark.url)) {
+                            this.newTask = {}
+                            return
+                        }
+
+                        // Post the new task to the /tasks route using the $http client
+                        this.$http.put('/bookmark', this.newBookmark).success(function(response) {
+                            if(response.error) {
+                              this.error = response.error
+                              return
+                            }
+                            this.newBookmark.id = response.created
+                            this.bookmarks.push(this.newBookmark)
+                            console.log("Bookmark created!")
+                            console.log(this.newBookmark)
+                            this.newBookmark = {}
+                        }).error(function(error) {
+                            this.error = error
+                            console.log(error)
+                        });
+                    },
+
+                    deleteBookmark: function(index) {
+                        // Use the $http client to delete a task by its id
+                        this.$http.delete('/bookmark/' + this.bookmarks[index].id).success(function(response) {
+                            this.bookmarks.splice(index, 1)
+                            console.log("Bookmark deleted!")
+                        }).error(function(error) {
+                            console.log(error)
+                        })
+                    }
+                }
+            })
+        </script>
+    </body>
+</html>
