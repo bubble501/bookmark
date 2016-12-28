@@ -9,7 +9,7 @@ import (
 )
 
 //TaskQueue is used to fetch and save bookmark's favicon and title.
-var TaskQueue = taskQueue.New(2, 2000)
+var TaskQueue = taskQueue.New(3, 2000)
 
 func init() {
 	fmt.Print("init taskQueue")

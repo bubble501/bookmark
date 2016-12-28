@@ -2,16 +2,18 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 
+	"github.com/bubble501/bookmark/config"
 	"github.com/bubble501/bookmark/handlers"
-
 	"github.com/labstack/echo"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-
-	db := initDB("storage.db")
+	dbpath := config.Singleton.GetStringValue("dbPath", "storage.db")
+	fmt.Printf("the db path is: %s", dbpath)
+	db := initDB(dbpath)
 	migrate(db)
 
 	e := echo.New()

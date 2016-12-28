@@ -48,7 +48,6 @@ func PutBookmark(db *sql.DB) echo.HandlerFunc {
 		}
 		// Add a task using our new model
 
-		service.GetBookmark(&bookmark)
 		job := service.FetchAndSaveJob{Bookmark: &bookmark, Db: db}
 		service.TaskQueue.AddJob(job)
 		id, err := models.PutBookmark(db, bookmark.URL)

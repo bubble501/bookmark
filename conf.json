@@ -1,0 +1,14 @@
+{
+	"Mode": "debug",
+	"Base": {
+		"dbPath": "./database/db.storage",
+		"imagePath": "./public/image/"
+	},
+
+	"Debug": {
+		"hello": "test"
+	},
+	"Release": {
+		"hello": "test"
+	}
+}

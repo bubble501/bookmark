@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/bubble501/bookmark/config"
 	"github.com/bubble501/bookmark/models"
 	"github.com/goware/urlx"
 	uuid "github.com/satori/go.uuid"
@@ -63,7 +64,9 @@ func FetchFavicon(url string, doc *goquery.Document) (string, error) {
 	defer response.Body.Close()
 
 	filename := fmt.Sprintf("%s.ico", uuid.NewV4())
-	file, err := os.Create(filename)
+	path := config.Singleton.GetStringValue("imagePath")
+
+	file, err := os.Create(path + filename)
 	if err != nil {
 		log.Fatal(err)
 	}
