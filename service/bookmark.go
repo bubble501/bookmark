@@ -3,55 +3,78 @@ package service
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bubble501/bookmark/config"
+	"github.com/bubble501/bookmark/logger"
 	"github.com/bubble501/bookmark/models"
 	"github.com/goware/urlx"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/net/html/charset"
 )
 
+var log = logger.Logger
+
+type serviceError struct {
+	message string
+}
+
+func (e *serviceError) Error() string {
+	return e.message
+}
+
 //GetBookmark generated an bookmark based on the given url.
 func GetBookmark(bookmark *models.Bookmark) error {
 	response, err := http.Get(bookmark.URL)
 	if err != nil {
-		fmt.Printf("%#v, %T", err, err)
+		log.Errorln("Failed to get ", bookmark.URL, " The error is: ", err)
 		return err
 	}
 	defer response.Body.Close()
 
 	utfBody, err := charset.NewReader(response.Body, "")
 	if err != nil {
-		fmt.Printf("%#v, %T", err, err)
+		log.Errorln("Failed to generate utfBody, the err ", err)
 		return err
 	}
+
 	doc, err := goquery.NewDocumentFromReader(utfBody)
 	if err != nil {
-		fmt.Printf("%#v, %T", err, err)
+		log.Errorln("Failed to get newDocument, the err ", err)
 		return err
 	}
 
 	bookmark.Thumbnail, err = FetchFavicon(bookmark.URL, doc)
 	if err != nil {
-		fmt.Printf("%#v, %T", err, err)
+		log.Errorln("Failed to fetch favicon, the err ", err)
 		return err
 	}
 
 	bookmark.Title = getTitle(doc)
-	fmt.Printf("The title is: %s\n", bookmark.Title)
+	log.Infoln("the bookmark's title is " + bookmark.Title)
 	return nil
 }
 
 // FetchFavicon fetch favicon based on the description in
 // http://stackoverflow.com/questions/5119041/how-can-i-get-a-web-sites-favicon
 func FetchFavicon(url string, doc *goquery.Document) (string, error) {
-	domain, _ := getDomain(url)
-	faviconPath, _ := getFaviconPath(doc)
+
+	domain, ok := getDomain(url)
+	if ok == false {
+		msg := "Failed to get domain from " + url
+		log.Errorln(msg)
+		return "", &serviceError{msg}
+	}
+
+	faviconPath, err := getFaviconPath(doc)
+
+	if err != nil {
+		return "", err
+	}
+
 	if strings.HasPrefix(faviconPath, "http") == false {
 		faviconPath = domain + faviconPath
 	}

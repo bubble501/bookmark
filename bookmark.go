@@ -2,16 +2,18 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 
 	"github.com/bubble501/bookmark/config"
 	"github.com/bubble501/bookmark/handlers"
+	"github.com/bubble501/bookmark/logger"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var log = logger.Logger
 
 func restricted(c echo.Context) error {
 	user := c.Get("user").(*jwt.Token)
@@ -22,7 +24,8 @@ func restricted(c echo.Context) error {
 
 func main() {
 	dbpath := config.Singleton.GetStringValue("dbPath", "storage.db")
-	fmt.Printf("the db path is: %s", dbpath)
+	log.Infoln("the db path is: ", dbpath)
+	log.Errorln("the error is :")
 	db := initDB(dbpath)
 	migrate(db)
 
@@ -44,13 +47,13 @@ func initDB(filepath string) *sql.DB {
 
 	// Here we check for any db errors then exit
 	if err != nil {
-		panic(err)
+		log.Panicln("Failed to open slqite3 database ", filepath, err)
 	}
 
 	// If we don't get any errors but somehow still don't get a db connection
 	// we exit as well
 	if db == nil {
-		panic("db nil")
+		log.Panicln("the db return by sql.open is nil")
 	}
 	return db
 }
@@ -71,6 +74,6 @@ func migrate(db *sql.DB) {
 	_, err := db.Exec(sql)
 	// Exit if something goes wrong with our SQL statement above
 	if err != nil {
-		panic(err)
+		log.Panicln("failed to execute sql, the error is:", err)
 	}
 }

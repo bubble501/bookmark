@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/bubble501/bookmark/logger"
 	"github.com/bubble501/bookmark/models"
 	"github.com/bubble501/bookmark/service"
 	"github.com/labstack/echo"
 )
+
+var log = logger.Logger
 
 //H is an map of response.
 type H map[string]interface{}
@@ -18,7 +20,7 @@ type H map[string]interface{}
 // GetBookmarks get the bookmark.
 func GetBookmarks(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		fmt.Printf("getbookmarks")
+		log.Infoln("GetBookmarks has been invoked in handler package")
 		return c.JSON(http.StatusOK, models.GetBookmarks(db))
 	}
 }
@@ -34,13 +36,14 @@ func PutBookmark(db *sql.DB) echo.HandlerFunc {
 			strings.HasPrefix(bookmark.URL, "https://") == false {
 			bookmark.URL = "http://" + bookmark.URL
 		}
-		fmt.Printf("putbookmark")
+		log.Infoln("PutBookmark has been invoked in handler package")
 		duplicateURL, err := models.IsURLExist(db, bookmark.URL)
 		if err != nil {
-			return err
+			return nil
 		}
 		res := map[string]int{"go": 1}
 		if duplicateURL == true {
+			log.Warningln("Duplicate url ", bookmark.URL)
 			return c.JSON(http.StatusOK, H{
 				"error":  "网址已存在！",
 				"result": res,
@@ -53,14 +56,13 @@ func PutBookmark(db *sql.DB) echo.HandlerFunc {
 		id, err := models.PutBookmark(db, bookmark.URL)
 
 		// Return a JSON response if successful
-
 		if err == nil {
 			return c.JSON(http.StatusCreated, H{
 				"created": id,
 				"hello":   res,
 			})
-			// Handle any errors
 		}
+		log.Errorln("models.PutBookmark failed with error ", err)
 		return err
 
 	}
@@ -77,8 +79,8 @@ func DeleteBookmark(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusOK, H{
 				"deleted": id,
 			})
-			// Handle errors
 		}
+		log.Errorln("models.DeleteBookmark failed with error ", err)
 		return err
 
 	}
